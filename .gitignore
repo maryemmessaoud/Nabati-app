@@ -1,0 +1,24 @@
+# Environnement virtuel
+venv/
+
+# Clés secrètes
+.env
+
+# Dataset (trop lourd pour GitHub)
+PlantDoc-1/
+data/images_test/
+*.db
+
+# Modèles entraînés (lourds)
+*.pt
+runs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
