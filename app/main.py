@@ -3,164 +3,365 @@ import streamlit as st
 from PIL import Image
 import sys
 from pathlib import Path
-
-# Ajouter le dossier racine au path
+sys.path.append(str(Path(__file__).parent))
+from llm import get_treatment_advice
 sys.path.append(str(Path(__file__).parent.parent))
 from model.predict import predict_disease
 
-# --- Configuration de la page ---
+# --- Configuration ---
 st.set_page_config(
-    page_title="Nabati — Diagnostic Agricole",
+    page_title="Nabati — نباتي",
     page_icon="🌿",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- CSS personnalisé ---
+# --- CSS Global ---
 st.markdown("""
 <style>
-    .main-title {
-        font-size: 2.5rem;
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Tajawal', sans-serif;
+    }
+
+    /* Fond général */
+    .stApp {
+        background: linear-gradient(160deg, #f0faf4 0%, #ffffff 100%);
+    }
+
+    /* Sidebar */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #1b4332 0%, #2d6a4f 100%);
+    }
+    [data-testid="stSidebar"] * {
+        color: #d8f3dc !important;
+    }
+    [data-testid="stSidebar"] .stRadio label {
+        color: white !important;
+        font-size: 1rem;
+        padding: 0.4rem 0;
+    }
+
+    /* Titre principal */
+    .nabati-title {
+        font-size: 3rem;
         font-weight: 800;
-        color: #2d6a4f;
+        background: linear-gradient(90deg, #1b4332, #40916c);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         text-align: center;
+        margin-bottom: 0;
+    }
+    .nabati-arabic {
+        font-size: 2rem;
+        color: #40916c;
+        text-align: center;
+        direction: rtl;
         margin-bottom: 0.2rem;
     }
-    .subtitle {
-        font-size: 1.1rem;
+    .nabati-subtitle {
+        font-size: 1rem;
         color: #74c69d;
         text-align: center;
         margin-bottom: 2rem;
     }
-    .result-box {
+
+    /* Carte résultat */
+    .result-card {
+        background: linear-gradient(135deg, #d8f3dc, #b7e4c7);
+        border-radius: 20px;
+        padding: 1.5rem 2rem;
+        border-left: 6px solid #2d6a4f;
+        box-shadow: 0 4px 15px rgba(45,106,79,0.15);
+        margin-bottom: 1rem;
+    }
+    .plant-name {
+        font-size: 1.1rem;
+        color: #52b788;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .disease-name {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #1b4332;
+        margin: 0.3rem 0;
+    }
+    .confidence-badge {
+        display: inline-block;
+        background: #2d6a4f;
+        color: white;
+        border-radius: 20px;
+        padding: 0.2rem 0.8rem;
+        font-size: 0.9rem;
+        margin-top: 0.3rem;
+    }
+
+    /* Carte conseil */
+    .advice-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 1px solid #b7e4c7;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-top: 1rem;
+    }
+
+    /* Warning */
+    .warning-card {
+        background: #fff8e6;
+        border-radius: 12px;
+        padding: 1rem 1.2rem;
+        border-left: 5px solid #f4a261;
+        margin: 0.5rem 0;
+    }
+
+    /* Healthy */
+    .healthy-card {
         background: linear-gradient(135deg, #d8f3dc, #b7e4c7);
         border-radius: 16px;
         padding: 1.5rem;
-        border-left: 5px solid #2d6a4f;
-        margin-top: 1rem;
+        text-align: center;
+        border: 2px solid #52b788;
     }
-    .disease-name {
-        font-size: 1.8rem;
+
+    /* Bouton */
+    .stButton button {
+        background: linear-gradient(90deg, #2d6a4f, #40916c);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        padding: 0.5rem 2rem;
         font-weight: 700;
-        color: #1b4332;
+        transition: all 0.3s;
     }
-    .confidence-text {
-        font-size: 1rem;
-        color: #40916c;
-        margin-top: 0.3rem;
+    .stButton button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(45,106,79,0.3);
     }
-    .warning-box {
-        background: #fff3cd;
-        border-radius: 12px;
-        padding: 1rem;
-        border-left: 5px solid #ffc107;
-        margin-top: 1rem;
+
+    /* Divider */
+    hr {
+        border-color: #b7e4c7;
+        margin: 1.5rem 0;
+    }
+
+    /* Upload zone */
+    [data-testid="stFileUploader"] {
+        border: 2px dashed #52b788 !important;
+        border-radius: 16px !important;
+        padding: 1rem !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # --- Sidebar ---
 with st.sidebar:
-    st.image("https://em-content.zobj.net/source/apple/354/seedling_1f331.png", width=80)
-    st.markdown("## 🌿 Nabati")
-    st.markdown("**Plateforme intelligente de diagnostic agricole**")
+    st.markdown("""
+    <div style='text-align:center; padding: 1rem 0;'>
+        <div style='font-size:3rem'>🌿</div>
+        <div style='font-size:1.8rem; font-weight:800; color:white;'>Nabati</div>
+        <div style='font-size:1.2rem; color:#74c69d; direction:rtl;'>نباتي</div>
+        <div style='font-size:0.8rem; color:#95d5b2; margin-top:0.3rem;'>
+            Diagnostic Agricole Intelligent
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
     st.markdown("---")
-    st.markdown("### Navigation")
+    st.markdown("<div style='color:#95d5b2; font-size:0.85rem; margin-bottom:0.5rem;'>NAVIGATION</div>",
+                unsafe_allow_html=True)
+
     page = st.radio("", [
         "🔍 Diagnostic",
         "💬 Chatbot",
         "📊 Dashboard"
-    ])
-    st.markdown("---")
-    st.markdown("*FST Tunis — Cycle Ingénieur Data Science*")
+    ], label_visibility="collapsed")
 
-# --- Page Diagnostic ---
+    st.markdown("---")
+
+    st.markdown("""
+    <div style='font-size:0.8rem; color:#74c69d; text-align:center;'>
+        <div>🌱 Comment ça marche ?</div>
+        <div style='margin-top:0.5rem; line-height:1.8;'>
+            📸 Uploader une photo<br>
+            🤖 Détection YOLOv8<br>
+            💡 Conseils par LLM<br>
+            📚 Questions via RAG
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("""
+    <div style='font-size:0.75rem; color:#52b788; text-align:center;'>
+        FST Tunis<br>Cycle Ingénieur Data Science
+    </div>
+    """, unsafe_allow_html=True)
+
+# ==================== PAGE DIAGNOSTIC ====================
 if page == "🔍 Diagnostic":
-    st.markdown('<div class="main-title">🌿 Nabati</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">Diagnostic intelligent des maladies des plantes</div>',
+
+    # Titre
+    st.markdown('<div class="nabati-title">🌿 Nabati</div>', unsafe_allow_html=True)
+    st.markdown('<div class="nabati-arabic">منصة ذكية لتشخيص أمراض النباتات</div>', unsafe_allow_html=True)
+    st.markdown('<div class="nabati-subtitle">Plateforme intelligente de diagnostic des maladies des plantes</div>',
                 unsafe_allow_html=True)
+
+    st.markdown("---")
 
     col1, col2 = st.columns([1, 1], gap="large")
 
     with col1:
-        st.markdown("### 📸 Uploader une image")
+        st.markdown("#### 📸 Uploader une image de plante")
         uploaded_file = st.file_uploader(
-            "Choisissez une photo de plante",
+            "Formats acceptés : JPG, JPEG, PNG",
             type=["jpg", "jpeg", "png"],
-            help="Prenez une photo claire de la feuille ou de la plante"
+            label_visibility="collapsed"
         )
 
         if uploaded_file:
             image = Image.open(uploaded_file)
-            st.image(image, caption="Image uploadée", use_column_width=True)
+            st.image(image, caption=f"📁 {uploaded_file.name}", use_column_width=True)
+
+            # Infos image
+            st.markdown(f"""
+            <div style='font-size:0.8rem; color:#74c69d; margin-top:0.5rem;'>
+                📐 Dimensions : {image.size[0]} × {image.size[1]} px &nbsp;|&nbsp;
+                📦 Taille : {uploaded_file.size/1024:.1f} KB
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            # Placeholder
+            st.markdown("""
+            <div style='background:#f0faf4; border:2px dashed #74c69d; border-radius:16px;
+                        padding:3rem; text-align:center; color:#74c69d;'>
+                <div style='font-size:3rem;'>🌱</div>
+                <div style='font-size:1rem; margin-top:0.5rem;'>
+                    Glissez une photo de plante ici
+                </div>
+                <div style='font-size:0.85rem; margin-top:0.3rem; color:#95d5b2;'>
+                    Prenez une photo claire de la feuille malade
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
     with col2:
-        st.markdown("### 🤖 Résultat du diagnostic")
+        st.markdown("#### 🤖 Résultat du diagnostic")
 
         if uploaded_file is None:
-            st.info("👈 Uploadez une image pour commencer le diagnostic")
-            st.markdown("#### Comment ça marche ?")
             st.markdown("""
-            1. 📸 **Uploadez** une photo de votre plante
-            2. 🤖 **YOLOv8** analyse et détecte la maladie
-            3. 💡 **Le LLM** génère des recommandations
-            4. 📚 **Posez vos questions** au chatbot
-            """)
+            <div style='background:#f8fffe; border:1px solid #b7e4c7; border-radius:16px;
+                        padding:2rem; text-align:center; color:#52b788;'>
+                <div style='font-size:2rem;'>👈</div>
+                <div style='margin-top:0.5rem;'>
+                    Uploadez une image pour démarrer le diagnostic
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
         else:
-            with st.spinner("🔍 Analyse en cours..."):
+            with st.spinner("🔬 Analyse de la plante en cours..."):
                 result = predict_disease(image)
 
             if result["success"]:
-                # Afficher le résultat
                 disease_raw = result["disease"]
                 confidence = result["confidence"]
 
-                # Formater le nom : "Tomato__Late_blight" → "Tomate — Mildiou tardif"
                 parts = disease_raw.split("__")
                 plant = parts[0].replace("_", " ") if len(parts) > 0 else ""
                 disease = parts[1].replace("_", " ") if len(parts) > 1 else disease_raw
+                is_healthy = "healthy" in disease.lower()
 
-                st.markdown(f"""
-                <div class="result-box">
-                    <div class="disease-name">🌱 {plant}</div>
-                    <div class="disease-name">🦠 {disease}</div>
-                    <div class="confidence-text">Confiance : {confidence:.1%}</div>
-                </div>
-                """, unsafe_allow_html=True)
-
-                # Barre de confiance
-                st.markdown("#### Niveau de confiance")
-                st.progress(confidence)
-
-                # Top 3 des prédictions
-                if "top3" in result:
-                    st.markdown("#### Top 3 des prédictions")
-                    for i, (name, conf) in enumerate(result["top3"]):
-                        parts = name.split("__")
-                        label = f"{parts[0]} — {parts[1].replace('_', ' ')}" if len(parts) > 1 else name
-                        st.write(f"{i+1}. **{label}** ({conf:.1%})")
-
-                # Alerte si confiance faible
-                if confidence < 0.5:
-                    st.markdown("""
-                    <div class="warning-box">
-                        ⚠️ <b>Confiance faible</b> — Essayez avec une image plus nette et mieux éclairée.
+                if is_healthy:
+                    st.markdown(f"""
+                    <div class="healthy-card">
+                        <div style='font-size:3rem;'>✅</div>
+                        <div style='font-size:1.5rem; font-weight:800; color:#1b4332;
+                                    margin-top:0.5rem;'>{plant}</div>
+                        <div style='font-size:1.2rem; color:#2d6a4f;'>Plante saine !</div>
+                        <div style='font-size:0.9rem; color:#52b788; margin-top:0.5rem;'>
+                            Confiance : {confidence:.1%}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                    <div class="result-card">
+                        <div class="plant-name">🌱 {plant}</div>
+                        <div class="disease-name">🦠 {disease}</div>
+                        <div class="confidence-badge">Confiance : {confidence:.1%}</div>
                     </div>
                     """, unsafe_allow_html=True)
 
-                # Bouton vers chatbot
-                st.success("✅ Diagnostic terminé !")
-                st.markdown("💬 **Allez dans le Chatbot** pour des recommandations de traitement !")
+                # Barre de confiance colorée
+                color = "#2d6a4f" if confidence > 0.7 else "#f4a261" if confidence > 0.4 else "#e63946"
+                st.markdown(f"""
+                <div style='margin:0.5rem 0 1rem 0;'>
+                    <div style='display:flex; justify-content:space-between;
+                                font-size:0.8rem; color:#74c69d; margin-bottom:4px;'>
+                        <span>Niveau de confiance</span>
+                        <span>{confidence:.1%}</span>
+                    </div>
+                    <div style='background:#e9f5ee; border-radius:10px; height:10px;'>
+                        <div style='background:{color}; width:{confidence*100:.0f}%;
+                                    height:10px; border-radius:10px; transition:all 0.5s;'></div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # Top 3
+                if "top3" in result:
+                    st.markdown("**🏆 Top 3 des prédictions**")
+                    for i, (name, conf) in enumerate(result["top3"]):
+                        p = name.split("__")
+                        label = f"{p[0].replace('_',' ')} — {p[1].replace('_',' ')}" if len(p) > 1 else name
+                        icon = "🥇" if i == 0 else "🥈" if i == 1 else "🥉"
+                        st.markdown(f"""
+                        <div style='display:flex; justify-content:space-between;
+                                    padding:0.4rem 0.8rem; margin:0.2rem 0;
+                                    background:{"#e8f5e9" if i==0 else "#f9fafb"};
+                                    border-radius:8px; font-size:0.9rem;'>
+                            <span>{icon} {label}</span>
+                            <span style='color:#2d6a4f; font-weight:700;'>{conf:.1%}</span>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                # Alerte confiance faible
+                if confidence < 0.5:
+                    st.markdown("""
+                    <div class="warning-card">
+                        ⚠️ <b>Confiance faible</b> — Pour un meilleur résultat :<br>
+                        • Prenez la photo en pleine lumière<br>
+                        • Centrez la feuille malade dans le cadre<br>
+                        • Évitez les reflets et le flou
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                # Conseils LLM
+                st.markdown("---")
+                st.markdown("#### 💡 Conseils de traitement")
+
+                with st.spinner("🤖 Génération des recommandations par IA..."):
+                    advice = get_treatment_advice(plant, disease, confidence)
+
+                st.markdown(f"""
+                <div class="advice-card">
+                    {advice.replace(chr(10), '<br>')}
+                </div>
+                """, unsafe_allow_html=True)
 
             else:
-                st.error(f"❌ Erreur : {result['error']}")
+                st.error(f"❌ Erreur lors du diagnostic : {result['error']}")
 
-# --- Page Chatbot (placeholder) ---
+# ==================== PAGE CHATBOT ====================
 elif page == "💬 Chatbot":
     st.markdown("## 💬 Chatbot Nabati")
-    st.info("🚧 Cette fonctionnalité sera disponible à l'étape 6 !")
+    st.info("🚧 Disponible à l'étape 7 — RAG + LangChain")
 
-# --- Page Dashboard (placeholder) ---
+# ==================== PAGE DASHBOARD ====================
 elif page == "📊 Dashboard":
     st.markdown("## 📊 Dashboard Nabati")
-    st.info("🚧 Cette fonctionnalité sera disponible à l'étape 9 !")
+    st.info("🚧 Disponible à l'étape 9 — Statistiques & Analytics")
