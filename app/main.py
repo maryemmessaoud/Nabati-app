@@ -8,6 +8,9 @@ from llm import get_treatment_advice
 sys.path.append(str(Path(__file__).parent.parent))
 from model.predict import predict_disease
 
+from database import log_detection, init_db
+init_db()
+
 # --- Configuration ---
 st.set_page_config(
     page_title="Nabati — نباتي",
@@ -273,6 +276,8 @@ if page == "🔍 Diagnostic":
                 parts = disease_raw.split("__")
                 plant = parts[0].replace("_", " ") if len(parts) > 0 else ""
                 disease = parts[1].replace("_", " ") if len(parts) > 1 else disease_raw
+                # Logger la détection
+                log_detection(plant, disease, confidence)
                 is_healthy = "healthy" in disease.lower()
 
                 if is_healthy:
@@ -458,8 +463,149 @@ elif page == "💬 Chatbot":
             }
         ]
         st.rerun()
-
 # ==================== PAGE DASHBOARD ====================
 elif page == "📊 Dashboard":
-    st.markdown("## 📊 Dashboard Nabati")
-    st.info("🚧 Disponible à l'étape 9 — Statistiques & Analytics")
+    import pandas as pd
+    import plotly.express as px
+    import plotly.graph_objects as go
+    from database import get_stats, get_all_detections
+
+    st.markdown('<div class="nabati-title">📊 Dashboard Nabati</div>', unsafe_allow_html=True)
+    st.markdown('<div class="nabati-subtitle">Statistiques et analyses des diagnostics</div>',
+                unsafe_allow_html=True)
+    st.markdown("---")
+
+    stats = get_stats()
+
+    # Vérifier si des données existent
+    if stats["total"] == 0:
+        st.markdown("""
+        <div style='background:#f0faf4; border:2px dashed #74c69d; border-radius:16px;
+                    padding:3rem; text-align:center; color:#52b788;'>
+            <div style='font-size:3rem;'>📊</div>
+            <div style='font-size:1.1rem; margin-top:0.5rem;'>
+                Aucun diagnostic encore effectué.<br>
+                Allez dans <b>🔍 Diagnostic</b> pour commencer !
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    else:
+        # --- KPIs ---
+        k1, k2, k3, k4 = st.columns(4)
+
+        with k1:
+            st.markdown(f"""
+            <div style='background:linear-gradient(135deg,#1b4332,#2d6a4f);
+                        border-radius:16px; padding:1.2rem; text-align:center; color:white;'>
+                <div style='font-size:2.5rem; font-weight:800;'>{stats["total"]}</div>
+                <div style='font-size:0.9rem; color:#95d5b2;'>Total Diagnostics</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with k2:
+            st.markdown(f"""
+            <div style='background:linear-gradient(135deg,#52b788,#74c69d);
+                        border-radius:16px; padding:1.2rem; text-align:center; color:white;'>
+                <div style='font-size:2.5rem; font-weight:800;'>{stats["saines"]}</div>
+                <div style='font-size:0.9rem; color:#d8f3dc;'>Plantes Saines ✅</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with k3:
+            st.markdown(f"""
+            <div style='background:linear-gradient(135deg,#e63946,#f4a261);
+                        border-radius:16px; padding:1.2rem; text-align:center; color:white;'>
+                <div style='font-size:2.5rem; font-weight:800;'>{stats["malades"]}</div>
+                <div style='font-size:0.9rem; color:#ffe8e8;'>Plantes Malades 🦠</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with k4:
+            st.markdown(f"""
+            <div style='background:linear-gradient(135deg,#3a86ff,#48cae4);
+                        border-radius:16px; padding:1.2rem; text-align:center; color:white;'>
+                <div style='font-size:2.5rem; font-weight:800;'>
+                    {stats["confiance_moyenne"]:.0%}
+                </div>
+                <div style='font-size:0.9rem; color:#e0f4ff;'>Confiance Moyenne</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # --- Graphiques ---
+        col1, col2 = st.columns(2)
+
+        with col1:
+            # Donut Sain vs Malade
+            if stats["total"] > 0:
+                fig_donut = go.Figure(data=[go.Pie(
+                    labels=["Saines ✅", "Malades 🦠"],
+                    values=[stats["saines"], stats["malades"]],
+                    hole=0.6,
+                    marker_colors=["#52b788", "#e63946"]
+                )])
+                fig_donut.update_layout(
+                    title="Répartition Sain / Malade",
+                    showlegend=True,
+                    height=320,
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font=dict(family="Tajawal")
+                )
+                st.plotly_chart(fig_donut, use_container_width=True)
+
+        with col2:
+            # Top maladies
+            if stats["top_maladies"]:
+                maladies = [m[0].replace("_", " ") for m in stats["top_maladies"]]
+                counts = [m[1] for m in stats["top_maladies"]]
+                fig_bar = px.bar(
+                    x=counts, y=maladies,
+                    orientation="h",
+                    title="🦠 Top Maladies Détectées",
+                    color=counts,
+                    color_continuous_scale=["#b7e4c7", "#2d6a4f"]
+                )
+                fig_bar.update_layout(
+                    height=320,
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    showlegend=False,
+                    coloraxis_showscale=False,
+                    font=dict(family="Tajawal")
+                )
+                st.plotly_chart(fig_bar, use_container_width=True)
+
+        # Évolution temporelle
+        if stats["par_jour"] and len(stats["par_jour"]) > 1:
+            dates = [d[0] for d in reversed(stats["par_jour"])]
+            counts = [d[1] for d in reversed(stats["par_jour"])]
+            fig_line = px.line(
+                x=dates, y=counts,
+                title="📅 Évolution des diagnostics (7 derniers jours)",
+                markers=True,
+                color_discrete_sequence=["#2d6a4f"]
+            )
+            fig_line.update_layout(
+                height=280,
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                xaxis_title="Date",
+                yaxis_title="Nombre de diagnostics",
+                font=dict(family="Tajawal")
+            )
+            st.plotly_chart(fig_line, use_container_width=True)
+
+        # Tableau des dernières détections
+        st.markdown("### 📋 Dernières détections")
+        rows = get_all_detections()
+        if rows:
+            df = pd.DataFrame(rows, columns=[
+                "ID", "Date", "Heure", "Plante", "Maladie", "Confiance", "Saine"
+            ])
+            df["Confiance"] = df["Confiance"].apply(lambda x: f"{x:.1%}")
+            df["Saine"] = df["Saine"].apply(lambda x: "✅" if x == 1 else "🦠")
+            df = df.drop("ID", axis=1)
+            st.dataframe(df.head(10), use_container_width=True, hide_index=True)
