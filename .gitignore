@@ -29,3 +29,5 @@ PlantDoc-1.zip
 PlantDoc-nabati.zip
 
 *.zip
+
+data/faiss_index/

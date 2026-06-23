@@ -1,0 +1,57 @@
+=== TOMATE - Early Blight (Alternariose) ===
+L'alternariose de la tomate est causée par le champignon Alternaria solani.
+Symptômes : taches brunes circulaires avec anneaux concentriques sur les feuilles âgées, jaunissement autour des taches, défoliation progressive.
+Traitement : fongicides à base de mancozèbe ou chlorothalonil, éliminer les feuilles infectées, éviter l'arrosage par aspersion.
+Prévention : rotation des cultures sur 2-3 ans, utiliser des semences saines, espacer les plants pour une bonne aération.
+Urgence : Moyenne. Agir dans les 7 jours après apparition des premiers symptômes.
+
+=== TOMATE - Late Blight (Mildiou) ===
+Le mildiou de la tomate est causé par Phytophthora infestans, un oomycète très destructeur.
+Symptômes : taches vert foncé à brunes sur feuilles, duvet blanc sous les feuilles par temps humide, fruits bruns et fermes.
+Traitement : fongicides cuivriques (bouillie bordelaise), métalaxyl, détruire les plants infectés immédiatement.
+Prévention : variétés résistantes, éviter l'humidité excessive, traitement préventif en période pluvieuse.
+Urgence : Élevée. La maladie peut détruire toute la récolte en 2-3 jours par temps humide.
+
+=== TOMATE - Septoria Leaf Spot ===
+Causée par le champignon Septoria lycopersici.
+Symptômes : petites taches circulaires avec centre gris et bordure brune, points noirs au centre des taches.
+Traitement : fongicides à base de cuivre ou mancozèbe, éliminer les feuilles atteintes.
+Prévention : éviter l'arrosage foliaire, rotation des cultures, nettoyer les débris végétaux en fin de saison.
+Urgence : Moyenne. Traiter dès apparition pour éviter la défoliation.
+
+=== POMME DE TERRE - Early Blight ===
+Causée par Alternaria solani, similaire à la tomate.
+Symptômes : taches brunes sur feuilles avec cercles concentriques, jaunissement et chute des feuilles.
+Traitement : fongicides préventifs (mancozèbe), destruction des débris infectés.
+Prévention : rotation des cultures, éviter l'excès d'azote, arrosage au pied.
+Urgence : Moyenne.
+
+=== POMME DE TERRE - Late Blight ===
+Causée par Phytophthora infestans, très dangereuse pour la pomme de terre.
+Symptômes : taches sombres sur feuilles et tiges, pourriture des tubercules, odeur caractéristique.
+Traitement : bouillie bordelaise, fongicides systémiques, arracher et détruire les plants malades.
+Prévention : utiliser des plants certifiés, bonne drainage du sol, variétés résistantes.
+Urgence : Très élevée. Peut détruire 100% de la récolte.
+
+=== MAÏS - Northern Leaf Blight ===
+Causée par Exserohilum turcicum.
+Symptômes : longues lésions elliptiques gris-vert à brun sur les feuilles, commençant par les feuilles basses.
+Traitement : fongicides (strobilurine, triazole) au stade précoce, éliminer résidus de culture.
+Prévention : variétés résistantes, rotation des cultures, labour profond.
+Urgence : Moyenne à élevée selon stade de développement.
+
+=== RAISIN - Black Rot ===
+Causée par le champignon Guignardia bidwellii.
+Symptômes : taches brunes sur feuilles, pourriture noire des baies qui se momifient.
+Traitement : fongicides (myclobutanil, captan), éliminer les baies momifiées.
+Prévention : taille pour aérer la vigne, traitement préventif avant floraison.
+Urgence : Élevée pendant la saison humide.
+
+=== CONSEILS GÉNÉRAUX ===
+Pour tout diagnostic de maladie végétale en Tunisie :
+1. Contacter le CRDA (Commissariat Régional au Développement Agricole) local.
+2. Conserver des échantillons de plantes malades pour analyse.
+3. Ne pas appliquer de pesticides sans identification précise de la maladie.
+4. Respecter les délais avant récolte (DAR) après traitement.
+5. Alterner les matières actives pour éviter les résistances.
+Contacts utiles Tunisie : INAT (71 287 110), CRDA Tunis (71 800 022)
