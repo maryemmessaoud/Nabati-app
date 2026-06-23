@@ -358,8 +358,106 @@ if page == "🔍 Diagnostic":
 
 # ==================== PAGE CHATBOT ====================
 elif page == "💬 Chatbot":
-    st.markdown("## 💬 Chatbot Nabati")
-    st.info("🚧 Disponible à l'étape 7 — RAG + LangChain")
+
+    st.markdown('<div class="nabati-title">💬 Chatbot Nabati</div>', unsafe_allow_html=True)
+    st.markdown('<div class="nabati-subtitle">Posez vos questions sur les maladies des plantes</div>',
+                unsafe_allow_html=True)
+    st.markdown("---")
+
+    # Import RAG
+    from rag import answer_question, get_vectorstore
+
+    # Initialiser le vectorstore au démarrage
+    with st.spinner("📚 Chargement de la base de connaissances..."):
+        get_vectorstore()
+
+    # Initialiser l'historique du chat
+    if "messages" not in st.session_state:
+        st.session_state.messages = [
+            {
+                "role": "assistant",
+                "content": "🌿 Bonjour ! Je suis **Nabati**, votre assistant agricole intelligent.\n\nPosez-moi vos questions sur les maladies des plantes, les traitements, ou la prévention. Je suis là pour vous aider ! 🌱"
+            }
+        ]
+
+    if "last_disease" not in st.session_state:
+        st.session_state.last_disease = ""
+
+    # Contexte maladie détectée
+    col1, col2 = st.columns([3, 1])
+    with col2:
+        disease_context = st.text_input(
+            "🔍 Contexte (maladie détectée)",
+            value=st.session_state.last_disease,
+            placeholder="Ex: Tomato Early blight",
+            help="Optionnel : renseigne la maladie détectée pour des réponses plus précises"
+        )
+
+    # Afficher l'historique
+    chat_container = st.container()
+    with chat_container:
+        for msg in st.session_state.messages:
+            if msg["role"] == "user":
+                st.markdown(f"""
+                <div style='display:flex; justify-content:flex-end; margin:0.5rem 0;'>
+                    <div style='background:#2d6a4f; color:white; border-radius:18px 18px 4px 18px;
+                                padding:0.8rem 1.2rem; max-width:75%; font-size:0.95rem;'>
+                        {msg["content"]}
+                    </div>
+                    <div style='margin-left:0.5rem; font-size:1.5rem;'>👤</div>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div style='display:flex; justify-content:flex-start; margin:0.5rem 0;'>
+                    <div style='margin-right:0.5rem; font-size:1.5rem;'>🌿</div>
+                    <div style='background:#f0faf4; border:1px solid #b7e4c7;
+                                border-radius:18px 18px 18px 4px;
+                                padding:0.8rem 1.2rem; max-width:75%; font-size:0.95rem;'>
+                        {msg["content"].replace(chr(10), "<br>")}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # Questions suggérées
+    st.markdown("**💡 Questions fréquentes :**")
+    suggestions = [
+        "Comment traiter le mildiou de la tomate ?",
+        "Quels fongicides utiliser contre l'alternariose ?",
+        "Comment prévenir les maladies fongiques ?",
+        "Où contacter un agronome en Tunisie ?"
+    ]
+
+    cols = st.columns(2)
+    for i, suggestion in enumerate(suggestions):
+        if cols[i % 2].button(suggestion, key=f"sug_{i}"):
+            st.session_state.messages.append({"role": "user", "content": suggestion})
+            with st.spinner("🤖 Recherche dans la base de connaissances..."):
+                response = answer_question(suggestion, disease_context)
+            st.session_state.messages.append({"role": "assistant", "content": response})
+            st.rerun()
+
+    # Zone de saisie
+    user_input = st.chat_input("Posez votre question ici...")
+
+    if user_input:
+        st.session_state.messages.append({"role": "user", "content": user_input})
+        with st.spinner("🔬 Analyse en cours..."):
+            response = answer_question(user_input, disease_context)
+        st.session_state.messages.append({"role": "assistant", "content": response})
+        st.rerun()
+
+    # Bouton reset
+    if st.button("🗑️ Effacer la conversation"):
+        st.session_state.messages = [
+            {
+                "role": "assistant",
+                "content": "🌿 Conversation réinitialisée. Comment puis-je vous aider ?"
+            }
+        ]
+        st.rerun()
 
 # ==================== PAGE DASHBOARD ====================
 elif page == "📊 Dashboard":
