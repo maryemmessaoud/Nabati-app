@@ -1,0 +1,12 @@
+# .dockerignore
+venv/
+__pycache__/
+*.pyc
+.env
+*.zip
+PlantDoc-1/
+runs/
+data/detections.db
+data/faiss_index/
+.git/
+*.pt
